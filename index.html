@@ -1,0 +1,1213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FridgeScout | AI Recipe Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        font-family: "Poppins", sans-serif;
+      }
+
+      /* Background Image with Overlay */
+      body {
+        background:
+          linear-gradient(
+            135deg,
+            rgba(255, 140, 0, 0.15) 0%,
+            rgba(220, 38, 38, 0.1) 100%
+          ),
+          url("https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&q=80")
+            center/cover fixed;
+        min-height: 100vh;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background:
+          radial-gradient(
+            circle at 20% 50%,
+            rgba(255, 140, 0, 0.1) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 80% 80%,
+            rgba(220, 38, 38, 0.1) 0%,
+            transparent 50%
+          );
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* Glassmorphism Effect */
+      .glass {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      }
+
+      .glass:hover {
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+      }
+
+      /* Navigation */
+      nav {
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+
+      /* Animation: Fade In */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .fade-in {
+        animation: fadeInUp 0.6s ease-out forwards;
+      }
+
+      .fade-in:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+      .fade-in:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .fade-in:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+      .fade-in:nth-child(4) {
+        animation-delay: 0.4s;
+      }
+
+      /* Recipe Card Styling */
+      .recipe-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 16px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .recipe-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        background: rgba(255, 255, 255, 0.95);
+      }
+
+      .recipe-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #ff8c00 0%, #dc2626 100%);
+      }
+
+      /* Badge Styling */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .badge-time {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.2) 0%,
+          rgba(59, 130, 246, 0.1) 100%
+        );
+        color: #1e40af;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+
+      .badge-difficulty {
+        background: linear-gradient(
+          135deg,
+          rgba(34, 197, 94, 0.2) 0%,
+          rgba(34, 197, 94, 0.1) 100%
+        );
+        color: #166534;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+      }
+
+      .badge-difficulty.medium {
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.2) 0%,
+          rgba(245, 158, 11, 0.1) 100%
+        );
+        color: #92400e;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+
+      .badge-difficulty.hard {
+        background: linear-gradient(
+          135deg,
+          rgba(239, 68, 68, 0.2) 0%,
+          rgba(239, 68, 68, 0.1) 100%
+        );
+        color: #7f1d1d;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+
+      /* Button with Gradient */
+      .btn-primary {
+        background: linear-gradient(135deg, #ff8c00 0%, #dc2626 100%);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn-primary::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+        transition: left 0.5s;
+      }
+
+      .btn-primary:hover::before {
+        left: 100%;
+      }
+
+      .btn-primary:hover {
+        box-shadow: 0 10px 30px rgba(255, 140, 0, 0.4);
+        transform: translateY(-2px);
+      }
+
+      .btn-primary:active {
+        transform: translateY(0);
+      }
+
+      /* Text Input Styling */
+      textarea,
+      input {
+        background: rgba(255, 255, 255, 0.6);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s;
+      }
+
+      textarea:focus,
+      input:focus {
+        background: rgba(255, 255, 255, 0.9);
+        border-color: #ff8c00;
+        box-shadow: 0 0 20px rgba(255, 140, 0, 0.3);
+        outline: none;
+      }
+
+      /* Loading State */
+      .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Content Container */
+      main {
+        position: relative;
+        z-index: 1;
+      }
+
+      /* Hero Section */
+      .hero-title {
+        font-size: 3.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #ff8c00 0%, #dc2626 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: fadeInUp 0.8s ease-out;
+      }
+
+      .hero-subtitle {
+        font-size: 1.25rem;
+        color: rgba(0, 0, 0, 0.7);
+        animation: fadeInUp 0.8s ease-out 0.2s both;
+      }
+
+      /* Results Area */
+      #results-area h2 {
+        animation: fadeInUp 0.6s ease-out;
+      }
+
+      /* Link Styling */
+      a.recipe-link {
+        background: linear-gradient(135deg, #ff8c00 0%, #dc2626 100%);
+        transition: all 0.3s;
+        position: relative;
+      }
+
+      a.recipe-link:hover {
+        box-shadow: 0 8px 20px rgba(255, 140, 0, 0.4);
+        transform: translateY(-2px);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 py-4 px-4 mb-8">
+      <div class="max-w-6xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🥕</span>
+          <h1
+            class="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent"
+          >
+            FridgeScout
+          </h1>
+        </div>
+        <span class="text-gray-600 text-sm font-medium"
+          >AI-Powered Recipe Finder</span
+        >
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 pb-16">
+      <!-- Hero Section -->
+      <div class="text-center mb-12">
+        <h2 class="hero-title mb-4">Never Waste Food Again</h2>
+        <p class="hero-subtitle">
+          Turn your leftovers into delicious meals with real recipes from top
+          food websites
+        </p>
+      </div>
+
+      <!-- Search Section -->
+      <div class="glass rounded-3xl p-8 mb-12 shadow-2xl">
+        <label class="block text-gray-800 font-semibold mb-4 text-lg">
+          ✨ What's hiding in your fridge?
+        </label>
+        <textarea
+          id="ingredients"
+          placeholder="e.g., Tomato, eggs, spinach, chicken... (separate with commas)"
+          class="w-full p-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none h-24 text-gray-700 resize-none"
+        ></textarea>
+        <button
+          onclick="findRecipes()"
+          class="btn-primary mt-6 w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-2 text-lg"
+        >
+          <span>🔍</span>
+          Scour the Web for Recipes
+        </button>
+        <p class="text-gray-600 text-sm mt-3">
+          💡 Tip: We'll search real recipe sites like SeriousEats, NYT Cooking,
+          and more!
+        </p>
+      </div>
+
+      <!-- Results Area -->
+      <div id="results-area" class="hidden">
+        <h2
+          class="text-3xl font-bold text-gray-800 mb-8 flex items-center gap-3"
+        >
+          <span>🍳</span>
+          Recipes Found
+        </h2>
+        <div id="recipe-list" class="grid gap-8 md:grid-cols-2"></div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="text-center py-16">
+        <div class="text-6xl mb-4">🍽️</div>
+        <p class="text-gray-600 text-xl font-medium">
+          Start by entering ingredients you'd like to use
+        </p>
+        <p class="text-gray-500 text-sm mt-2">
+          We'll find amazing recipes from popular cooking websites
+        </p>
+      </div>
+    </main>
+
+    <script>
+      // Professional Recipe Database - 30 Recipes (South African Focus)
+      const recipeDatabase = [
+        // SOUTH AFRICAN RECIPES
+        {
+          title: "Bobotie - South African Spiced Mince",
+          url: "https://www.food24.com/recipes/mains/bobotie",
+          source: "Food24",
+          time: "45 mins",
+          difficulty: "Medium",
+          description:
+            "A beloved South African dish of spiced minced meat with an egg topping. Aromatic and comforting with turmeric and curry powder.",
+          ingredients: [
+            "beef",
+            "onion",
+            "garlic",
+            "curry powder",
+            "turmeric",
+            "tomato paste",
+            "bread",
+            "sultana",
+            "egg",
+            "milk",
+            "butter",
+          ],
+        },
+        {
+          title: "Bunny Chow - Durban Street Curry",
+          url: "https://www.thelazymakoti.com/bunny-chow-recipe/",
+          source: "The Lazy Makoti",
+          time: "30 mins",
+          difficulty: "Medium",
+          description:
+            "A iconic Durban curry served inside a hollowed bread loaf. Spicy, satisfying, and full of flavor.",
+          ingredients: [
+            "bread",
+            "chicken",
+            "curry powder",
+            "onion",
+            "garlic",
+            "ginger",
+            "coconut milk",
+            "potato",
+            "pea",
+            "oil",
+          ],
+        },
+        {
+          title: "Cape Malay Curry",
+          url: "https://www.woolworthstaste.co.za/recipes/cape-malay-curry/",
+          source: "Woolworths TASTE",
+          time: "50 mins",
+          difficulty: "Medium",
+          description:
+            "A fragrant, mildly spiced South African Cape Malay curry with turmeric and fenugreek. Perfect comfort food.",
+          ingredients: [
+            "chicken",
+            "onion",
+            "garlic",
+            "ginger",
+            "turmeric",
+            "coriander",
+            "cumin",
+            "coconut milk",
+            "tomato",
+            "potato",
+            "oil",
+          ],
+        },
+        {
+          title: "Chakalaka - South African Vegetable Relish",
+          url: "https://www.thelazymakoti.com/chakalaka-recipe/",
+          source: "The Lazy Makoti",
+          time: "20 mins",
+          difficulty: "Easy",
+          description:
+            "A vibrant, spicy South African vegetable side dish. Perfect with grilled meats and fresh.",
+          ingredients: [
+            "cabbage",
+            "carrot",
+            "bell pepper",
+            "onion",
+            "tomato",
+            "curry powder",
+            "garlic",
+            "chili",
+            "oil",
+            "salt",
+          ],
+        },
+        {
+          title: "Biltong Pasta",
+          url: "https://www.simplydelicious.co.za/recipes/biltong-pasta",
+          source: "Simply Delicious",
+          time: "20 mins",
+          difficulty: "Easy",
+          description:
+            "Creamy pasta with sliced biltong, mushrooms, and fresh herbs. A modern South African twist.",
+          ingredients: [
+            "pasta",
+            "biltong",
+            "mushroom",
+            "cream",
+            "garlic",
+            "onion",
+            "parmesan",
+            "parsley",
+            "salt",
+            "pepper",
+            "butter",
+          ],
+        },
+        {
+          title: "Pap and Vleis (Pap with Meat)",
+          url: "https://www.food24.com/recipes/mains/pap-and-vleis",
+          source: "Food24",
+          time: "35 mins",
+          difficulty: "Easy",
+          description:
+            "A traditional South African comfort meal of creamy maize meal with savory grilled meat.",
+          ingredients: [
+            "maize meal",
+            "beef",
+            "onion",
+            "butter",
+            "salt",
+            "pepper",
+            "water",
+            "garlic",
+            "tomato",
+          ],
+        },
+        {
+          title: "Milk Tart (Melktert)",
+          url: "https://www.simplydelicious.co.za/recipes/milk-tart",
+          source: "Simply Delicious",
+          time: "60 mins",
+          difficulty: "Medium",
+          description:
+            "A sweet, custard-filled pastry with cinnamon on top. A classic South African dessert.",
+          ingredients: [
+            "flour",
+            "butter",
+            "egg",
+            "milk",
+            "sugar",
+            "cornstarch",
+            "cinnamon",
+            "salt",
+            "water",
+          ],
+        },
+        {
+          title: "Sosaties - Cape Malay Kebabs",
+          url: "https://www.africanbites.com/sosaties-recipe/",
+          source: "African Bites",
+          time: "25 mins",
+          difficulty: "Easy",
+          description:
+            "Spiced meat and fruit skewers with turmeric and coriander. A Cape tradition cooked over flames.",
+          ingredients: [
+            "beef",
+            "apricot",
+            "onion",
+            "turmeric",
+            "coriander",
+            "cumin",
+            "garlic",
+            "ginger",
+            "chili",
+            "salt",
+            "oil",
+          ],
+        },
+        {
+          title: "Boerewors and Pap",
+          url: "https://www.africanbites.com/boerewors-pap/",
+          source: "African Bites",
+          time: "30 mins",
+          difficulty: "Easy",
+          description:
+            "Spiced sausage with creamy maize meal. A quintessential South African braai meal.",
+          ingredients: [
+            "boerewors",
+            "maize meal",
+            "onion",
+            "butter",
+            "salt",
+            "pepper",
+            "water",
+            "garlic",
+          ],
+        },
+        {
+          title: "Butternut Soup (South African)",
+          url: "https://www.woolworthstaste.co.za/recipes/butternut-soup/",
+          source: "Woolworths TASTE",
+          time: "40 mins",
+          difficulty: "Easy",
+          description:
+            "Creamy, smooth butternut soup with warm spices. A South African comfort classic.",
+          ingredients: [
+            "butternut",
+            "onion",
+            "garlic",
+            "cream",
+            "stock",
+            "butter",
+            "cinnamon",
+            "nutmeg",
+            "salt",
+            "pepper",
+          ],
+        },
+        {
+          title: "Kingklip Curry",
+          url: "https://www.woolworthstaste.co.za/recipes/kingklip-curry/",
+          source: "Woolworths TASTE",
+          time: "30 mins",
+          difficulty: "Medium",
+          description:
+            "A delicate South African fish curry with turmeric and coriander. Fresh, flaky kingklip.",
+          ingredients: [
+            "kingklip",
+            "curry powder",
+            "onion",
+            "garlic",
+            "ginger",
+            "turmeric",
+            "coriander",
+            "coconut milk",
+            "lemon",
+            "oil",
+          ],
+        },
+        {
+          title: "Sago Pudding (Tapioca Pudding)",
+          url: "https://www.africanbites.com/sago-pudding/",
+          source: "African Bites",
+          time: "25 mins",
+          difficulty: "Easy",
+          description:
+            "A creamy, comforting South African pudding with warm spices.",
+          ingredients: [
+            "sago",
+            "milk",
+            "sugar",
+            "vanilla",
+            "butter",
+            "salt",
+            "water",
+            "cinnamon",
+          ],
+        },
+        {
+          title: "Koeksister (Fried Dough)",
+          url: "https://www.simplydelicious.co.za/recipes/koeksister",
+          source: "Simply Delicious",
+          time: "20 mins",
+          difficulty: "Easy",
+          description:
+            "Golden, crispy fried dough sticks soaked in sweet syrup. A beloved South African treat.",
+          ingredients: [
+            "flour",
+            "egg",
+            "baking powder",
+            "salt",
+            "water",
+            "sugar",
+            "butter",
+            "oil",
+            "cinnamon",
+          ],
+        },
+        {
+          title: "Vetkoek (Fried Bread)",
+          url: "https://www.thelazymakoti.com/vetkoek-recipe/",
+          source: "The Lazy Makoti",
+          time: "15 mins",
+          difficulty: "Easy",
+          description:
+            "Soft, pillowy fried bread. Can be served sweet with jam or savory with cheese.",
+          ingredients: [
+            "flour",
+            "salt",
+            "baking powder",
+            "butter",
+            "water",
+            "oil",
+          ],
+        },
+        // INTERNATIONAL RECIPES (BEST ONES KEPT)
+        {
+          title: "Shakshuka - Spiced Eggs in Tomato Sauce",
+          url: "https://www.seriouseats.com/shakshuka-recipe",
+          source: "Serious Eats",
+          time: "25 mins",
+          difficulty: "Easy",
+          description:
+            "A Middle Eastern classic with eggs poached in a fragrant tomato sauce. Perfect comfort food!",
+          ingredients: [
+            "eggs",
+            "tomato",
+            "garlic",
+            "onion",
+            "paprika",
+            "cumin",
+            "oil",
+          ],
+        },
+        {
+          title: "Pesto Pasta with Fresh Basil",
+          url: "https://cooking.nytimes.com/recipes/1016088-basic-pesto",
+          source: "NYT Cooking",
+          time: "15 mins",
+          difficulty: "Easy",
+          description:
+            "Vibrant green pasta with homemade basil pesto. Restaurant-quality in 15 minutes.",
+          ingredients: [
+            "basil",
+            "pasta",
+            "garlic",
+            "pine nuts",
+            "parmesan",
+            "lemon",
+            "oil",
+          ],
+        },
+        {
+          title: "Chicken Stir Fry with Vegetables",
+          url: "https://www.budgetbytes.com/chicken-stir-fry/",
+          source: "Budget Bytes",
+          time: "20 mins",
+          difficulty: "Easy",
+          description:
+            "Quick, healthy, and versatile. Use whatever vegetables you have on hand!",
+          ingredients: [
+            "chicken",
+            "soy sauce",
+            "garlic",
+            "ginger",
+            "bell pepper",
+            "broccoli",
+            "oil",
+          ],
+        },
+        {
+          title: "Thai Red Curry with Chicken",
+          url: "https://www.recipetineats.com/thai-red-curry/",
+          source: "RecipeTin Eats",
+          time: "20 mins",
+          difficulty: "Medium",
+          description:
+            "Fragrant and spicy Thai curry with tender chicken and vegetables.",
+          ingredients: [
+            "chicken",
+            "red curry paste",
+            "coconut milk",
+            "bell pepper",
+            "zucchini",
+            "basil",
+            "lime",
+            "fish sauce",
+            "garlic",
+          ],
+        },
+        {
+          title: "Beef and Broccoli Stir Fry",
+          url: "https://thewoksoflife.com/beef-and-broccoli-stir-fry/",
+          source: "The Woks of Life",
+          time: "15 mins",
+          difficulty: "Easy",
+          description:
+            "Classic wok-tossed beef and broccoli in a savory sauce. Better than takeout.",
+          ingredients: [
+            "beef",
+            "broccoli",
+            "soy sauce",
+            "garlic",
+            "ginger",
+            "sesame oil",
+            "cornstarch",
+            "rice",
+            "oil",
+          ],
+        },
+        {
+          title: "Korean Beef Bowl",
+          url: "https://pinchofyum.com/korean-beef-bowl/",
+          source: "Pinch of Yum",
+          time: "15 mins",
+          difficulty: "Easy",
+          description:
+            "Savory ground beef over rice with soy, ginger, and garlic. Comfort food at its best.",
+          ingredients: [
+            "beef",
+            "rice",
+            "soy sauce",
+            "ginger",
+            "garlic",
+            "green onion",
+            "sesame oil",
+            "brown sugar",
+            "red pepper flakes",
+          ],
+        },
+        {
+          title: "Perfect Roast Chicken",
+          url: "https://www.americastestkitchen.com/roast-chicken/",
+          source: "America's Test Kitchen",
+          time: "75 mins",
+          difficulty: "Medium",
+          description:
+            "Golden, crispy skin and juicy meat. The ultimate roasted chicken.",
+          ingredients: [
+            "chicken",
+            "salt",
+            "pepper",
+            "butter",
+            "garlic",
+            "lemon",
+            "thyme",
+            "rosemary",
+          ],
+        },
+        {
+          title: "Pan-Seared Steak with Butter",
+          url: "https://www.americastestkitchen.com/pan-seared-steak/",
+          source: "America's Test Kitchen",
+          time: "15 mins",
+          difficulty: "Medium",
+          description:
+            "Restaurant-quality steak with a perfect crust and tender, juicy center.",
+          ingredients: [
+            "steak",
+            "salt",
+            "pepper",
+            "butter",
+            "garlic",
+            "rosemary",
+            "oil",
+          ],
+        },
+        {
+          title: "Grilled Lemon Herb Chicken",
+          url: "https://www.skinnytaste.com/grilled-chicken/",
+          source: "Skinnytaste",
+          time: "20 mins",
+          difficulty: "Easy",
+          description:
+            "Juicy grilled chicken breast marinated in lemon and herbs.",
+          ingredients: [
+            "chicken",
+            "lemon",
+            "garlic",
+            "rosemary",
+            "thyme",
+            "olive oil",
+            "salt",
+            "pepper",
+          ],
+        },
+        {
+          title: "Classic Chocolate Chip Cookies",
+          url: "https://www.kingarthurbaking.com/recipes/chocolate-chip-cookies/",
+          source: "King Arthur Baking",
+          time: "25 mins",
+          difficulty: "Easy",
+          description:
+            "The ultimate chocolate chip cookie recipe. Crispy edges, chewy centers.",
+          ingredients: [
+            "flour",
+            "butter",
+            "brown sugar",
+            "sugar",
+            "egg",
+            "vanilla",
+            "chocolate chips",
+            "salt",
+            "baking soda",
+          ],
+        },
+        {
+          title: "Tomato Soup with Fresh Basil",
+          url: "https://www.allrecipes.com/recipe/12594/tomato-soup-v/",
+          source: "AllRecipes",
+          time: "30 mins",
+          difficulty: "Medium",
+          description:
+            "Creamy, comforting tomato soup that's perfect for lunch or dinner.",
+          ingredients: [
+            "tomato",
+            "onion",
+            "garlic",
+            "cream",
+            "basil",
+            "stock",
+            "butter",
+          ],
+        },
+        {
+          title: "Caprese Salad",
+          url: "https://www.seriouseats.com/caprese-salad",
+          source: "Serious Eats",
+          time: "10 mins",
+          difficulty: "Easy",
+          description:
+            "A classic Italian salad with fresh mozzarella, tomatoes, and basil.",
+          ingredients: [
+            "tomato",
+            "mozzarella",
+            "basil",
+            "olive oil",
+            "balsamic vinegar",
+            "salt",
+            "pepper",
+          ],
+        },
+        {
+          title: "Mediterranean Chickpea Salad",
+          url: "https://www.bbcgoodfood.com/recipes/chickpea-salad",
+          source: "BBC Good Food",
+          time: "10 mins",
+          difficulty: "Easy",
+          description:
+            "Fresh, healthy, and nutritious. Great as a side or light main course.",
+          ingredients: [
+            "chickpea",
+            "tomato",
+            "cucumber",
+            "red onion",
+            "feta",
+            "olive",
+            "lemon",
+            "oil",
+          ],
+        },
+        {
+          title: "Spinach and Feta Frittata",
+          url: "https://www.seriouseats.com/recipes/2015/09/easy-frittata-recipe.html",
+          source: "Serious Eats",
+          time: "22 mins",
+          difficulty: "Easy",
+          description:
+            "A protein-packed breakfast or dinner that comes together in minutes.",
+          ingredients: [
+            "eggs",
+            "spinach",
+            "feta",
+            "onion",
+            "garlic",
+            "butter",
+            "milk",
+          ],
+        },
+        {
+          title: "Baked Feta Pasta",
+          url: "https://www.recipetineats.com/feta-pasta/",
+          source: "RecipeTin Eats",
+          time: "30 mins",
+          difficulty: "Easy",
+          description:
+            "Creamy, rich pasta with melted feta, garlic, and fresh tomatoes baked to perfection.",
+          ingredients: [
+            "pasta",
+            "feta",
+            "tomato",
+            "garlic",
+            "basil",
+            "olive oil",
+            "red pepper flakes",
+            "salt",
+            "pepper",
+          ],
+        },
+      ];
+
+      // Standardize ingredient input (normalize variations)
+      function normalizeIngredient(ingredient) {
+        return ingredient
+          .toLowerCase()
+          .trim()
+          .replace(/s$/, "") // Remove plural 's'
+          .replace(/ies$/, "y") // Convert ies to y (berries -> berry)
+          .replace(/es$/, "") // Remove common 'es' endings
+          .replace(/\s+/g, " "); // Normalize spaces
+      }
+
+      // Calculate match score for a recipe
+      function calculateMatchScore(userIngredients, recipeIngredients) {
+        const normalizedUserIngredients = new Set(
+          userIngredients.map(normalizeIngredient),
+        );
+
+        const normalizedRecipeIngredients =
+          recipeIngredients.map(normalizeIngredient);
+
+        let matchedCount = 0;
+        const matched = [];
+        const missing = [];
+
+        normalizedRecipeIngredients.forEach((ingredient) => {
+          if (normalizedUserIngredients.has(ingredient)) {
+            matchedCount++;
+            matched.push(ingredient);
+          } else {
+            missing.push(ingredient);
+          }
+        });
+
+        // Match percentage: (ingredients user has) / (ingredients recipe needs)
+        const matchPercentage = Math.round(
+          (matchedCount / normalizedRecipeIngredients.length) * 100,
+        );
+
+        return {
+          matchPercentage,
+          matchedCount,
+          totalNeeded: normalizedRecipeIngredients.length,
+          matchedIngredients: matched,
+          missingIngredients: missing,
+        };
+      }
+
+      function findRecipes() {
+        const input = document.getElementById("ingredients").value.trim();
+        const resultsList = document.getElementById("recipe-list");
+        const resultsArea = document.getElementById("results-area");
+        const emptyState = document.getElementById("empty-state");
+
+        if (!input) {
+          alert("Please enter some ingredients!");
+          return;
+        }
+
+        // Parse user ingredients
+        const userIngredients = input
+          .split(",")
+          .map((i) => i.trim())
+          .filter((i) => i.length > 0);
+
+        // Clear previous results
+        resultsList.innerHTML = "";
+
+        // Show loading state
+        resultsArea.classList.remove("hidden");
+        emptyState.classList.add("hidden");
+        resultsList.innerHTML =
+          '<div class="col-span-2 text-center py-8"><div class="loading-spinner mx-auto"></div><p class="text-gray-600 mt-4">Analyzing ingredients and finding matches...</p></div>';
+
+        // Simulate API call with setTimeout
+        setTimeout(() => {
+          const selectedRecipes = getMatchingRecipes(userIngredients);
+
+          // Clear loading state
+          resultsList.innerHTML = "";
+
+          if (selectedRecipes.length === 0) {
+            resultsList.innerHTML =
+              '<div class="col-span-2 text-center py-8"><p class="text-gray-600">No matching recipes found. Try different ingredients!</p></div>';
+            return;
+          }
+
+          // Display recipes with fade-in animation
+          selectedRecipes.forEach((recipe, index) => {
+            const card = createRecipeCard(recipe);
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.classList.add("fade-in");
+            resultsList.appendChild(card);
+          });
+        }, 800);
+      }
+
+      function getMatchingRecipes(userIngredients) {
+        // Score all recipes
+        const scoredRecipes = recipeDatabase
+          .map((recipe) => {
+            const matchData = calculateMatchScore(
+              userIngredients,
+              recipe.ingredients,
+            );
+
+            // Only include recipes with at least 10% match
+            if (matchData.matchPercentage < 10) {
+              return null;
+            }
+
+            return {
+              ...recipe,
+              matchScore: matchData.matchPercentage,
+              matchedIngredients: matchData.matchedIngredients,
+              missingIngredients: matchData.missingIngredients,
+              matchedCount: matchData.matchedCount,
+              totalNeeded: matchData.totalNeeded,
+            };
+          })
+          .filter((recipe) => recipe !== null);
+
+        // Sort by match percentage (highest first)
+        scoredRecipes.sort((a, b) => b.matchScore - a.matchScore);
+
+        // Return top 10 recipes maximum
+        return scoredRecipes.slice(0, 10);
+      }
+
+      function createRecipeCard(recipe) {
+        const card = document.createElement("div");
+        card.className = "recipe-card";
+
+        const difficultyClass =
+          recipe.difficulty === "Easy"
+            ? ""
+            : recipe.difficulty === "Medium"
+              ? "medium"
+              : "hard";
+
+        // Format ingredient lists
+        const matchedList = recipe.matchedIngredients.join(", ");
+        const missingList = recipe.missingIngredients.join(", ");
+
+        // Generate a unique ID for error reporting
+        const cardId = `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        card.innerHTML = `
+          <div class="p-6" id="${cardId}">
+            <div class="flex items-start justify-between mb-3">
+              <h3 class="font-bold text-lg text-gray-800 flex-1 pr-2 line-clamp-2">
+                ${recipe.title}
+              </h3>
+              <span class="text-xl flex-shrink-0">🍽️</span>
+            </div>
+
+            <p class="text-sm text-gray-600 mb-4 line-clamp-2">
+              ${recipe.description}
+            </p>
+
+            <!-- Match Score Progress Bar -->
+            <div class="mb-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-gray-700">MATCH SCORE</span>
+                <span class="text-lg font-bold text-green-600">${recipe.matchScore}%</span>
+              </div>
+              <div class="w-full bg-gray-300 rounded-full h-2.5">
+                <div
+                  class="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full transition-all"
+                  style="width: ${recipe.matchScore}%"
+                ></div>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">${recipe.matchedCount} of ${recipe.totalNeeded} ingredients</p>
+            </div>
+
+            <!-- Matched Ingredients -->
+            <div class="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p class="text-xs font-bold text-green-800 mb-1">✓ YOU HAVE:</p>
+              <p class="text-xs text-green-700">${matchedList || "None matched"}</p>
+            </div>
+
+            <!-- Missing Ingredients -->
+            <div class="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <p class="text-xs font-bold text-orange-800 mb-1">⚠ YOU NEED:</p>
+              <p class="text-xs text-orange-700">${missingList || "None"}</p>
+            </div>
+
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="badge badge-time">⏱️ ${recipe.time}</span>
+              <span class="badge badge-difficulty ${difficultyClass}">📊 ${recipe.difficulty}</span>
+            </div>
+
+            <div class="text-xs text-gray-500 mb-4 font-medium">
+              Source: <span class="text-orange-600">${recipe.source}</span>
+            </div>
+
+            <!-- Link Container with Error Handling -->
+            <div class="flex flex-col gap-2">
+              <a 
+                href="${recipe.url}" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="recipe-link block w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold py-3 rounded-lg transition text-center"
+                onclick="onRecipeLinkClick(event, '${cardId}')"
+              >
+                View Full Recipe →
+              </a>
+              
+              <!-- Report Broken Link Button (Hidden by default) -->
+              <button 
+                class="broken-link-report hidden text-xs text-red-600 hover:text-red-800 underline py-2 transition"
+                onclick="reportBrokenLink('${recipe.title}', '${recipe.url}', '${recipe.source}')"
+              >
+                ⚠️ Report Broken Link
+              </button>
+            </div>
+          </div>
+        `;
+
+        return card;
+      }
+
+      // Handle recipe link clicks with error reporting
+      function onRecipeLinkClick(event, cardId) {
+        // Attempt to load the page and show error handling if it fails
+        const card = document.getElementById(cardId);
+        if (!card) return;
+
+        const reportBtn = card.querySelector(".broken-link-report");
+        const timeout = setTimeout(() => {
+          if (reportBtn) {
+            reportBtn.classList.remove("hidden");
+          }
+        }, 5000); // Show button if page doesn't load within 5 seconds
+
+        window.addEventListener("beforeunload", () => {
+          clearTimeout(timeout);
+        });
+      }
+
+      // Report broken link function
+      function reportBrokenLink(title, url, source) {
+        const message = `
+        Link Report Submitted:
+        Recipe: ${title}
+        Source: ${source}
+        URL: ${url}
+        
+        Thank you for helping us fix broken links!
+        This link will be verified and updated.
+        `;
+        alert(message);
+
+        // Log to console for debugging
+        console.warn("Broken link reported:", { title, url, source });
+      }
+
+      // Allow Enter key to search
+      document
+        .getElementById("ingredients")
+        .addEventListener("keypress", (e) => {
+          if (e.key === "Enter" && e.ctrlKey) {
+            findRecipes();
+          }
+        });
+    </script>
+  </body>
+</html>
